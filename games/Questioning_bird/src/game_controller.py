@@ -130,5 +130,5 @@ class GameController:
             
         # Clean up but don't exit the application
         pygame.quit()
-        # Return instead of sys.exit() to go back to the main launcher
-        return 0 
+        # Return True instead of 0 to signal to the main launcher to continue running
+        return True 

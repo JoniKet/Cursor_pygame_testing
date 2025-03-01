@@ -5,6 +5,8 @@ import os
 import random
 import math
 from pygame.locals import *
+import numpy as np
+import wave
 
 # Import our modular code with correct relative imports
 from games.revenge_of_pigs.src.constants import *
@@ -23,6 +25,47 @@ RIGHT_BOUNDARY = WIDTH + BOUNDARY_MARGIN
 TOP_BOUNDARY = -BOUNDARY_MARGIN
 BOTTOM_BOUNDARY = HEIGHT + BOUNDARY_MARGIN
 MAX_VELOCITY = 6000  # Drastically increased maximum velocity cap
+
+# Initialize pygame mixer for sound
+pygame.mixer.init()
+
+# Sound paths and variables
+SOUNDS_DIR = None
+LAUNCH_SOUND = None
+COLLISION_SOUND = None
+WOOD_BREAK_SOUND = None
+VICTORY_SOUND = None
+SLINGSHOT_STRETCH_SOUND = None
+
+def load_sound(filename):
+    """Load a sound file"""
+    global SOUNDS_DIR
+    
+    if SOUNDS_DIR is None:
+        return None
+        
+    filepath = os.path.join(SOUNDS_DIR, filename)
+    
+    if os.path.exists(filepath):
+        try:
+            return pygame.mixer.Sound(filepath)
+        except:
+            print(f"Error loading sound: {filepath}")
+            return None
+    else:
+        print(f"Sound file not found: {filepath}")
+        return None
+
+def load_sounds():
+    """Load all sound files"""
+    global LAUNCH_SOUND, COLLISION_SOUND, WOOD_BREAK_SOUND, VICTORY_SOUND, SLINGSHOT_STRETCH_SOUND, SOUNDS_DIR
+    
+    # Load the sounds
+    LAUNCH_SOUND = load_sound("launch.wav")
+    COLLISION_SOUND = load_sound("collision.wav")
+    WOOD_BREAK_SOUND = load_sound("wood_break.wav")
+    VICTORY_SOUND = load_sound("victory.wav")
+    SLINGSHOT_STRETCH_SOUND = load_sound("slingshot_stretch.wav")
 
 def enforce_boundaries(space, pig, blocks):
     """
@@ -88,15 +131,29 @@ def enforce_boundaries(space, pig, blocks):
                 block.body.velocity = velocity_x, -velocity_y * 0.8  # Less dampening (was 0.7)
 
 def run_game():
-    # Initialize Pygame and Pymunk
+    # Initialize pygame
+    pygame.init()
+    
+    # Set up the display
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Revenge of the Pigs!")
-
+    pygame.display.set_caption("Revenge of Pigs")
+    
+    # Set up the clock
+    clock = pygame.time.Clock()
+    
     # Create assets directory if it doesn't exist
-    assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
     if not os.path.exists(assets_dir):
         os.makedirs(assets_dir)
-
+    
+    # Initialize sounds directory and load sounds
+    global SOUNDS_DIR
+    SOUNDS_DIR = os.path.join(assets_dir, "sounds")
+    if not os.path.exists(SOUNDS_DIR):
+        os.makedirs(SOUNDS_DIR)
+        print(f"Sound directory not found. Please run generate_sounds.py to create sound files.")
+    load_sounds()
+    
     # Load and scale background image
     try:
         # Try to load the new AI-generated background first
@@ -178,33 +235,74 @@ def run_game():
     # Create explosion list
     explosions = []
 
-    # Collision handler
+    # Collision handler function
     def collision_handler(arbiter, space, data):
-        # Print collision information for debugging
         pig_shape = arbiter.shapes[0]
-        target_shape = arbiter.shapes[1]
+        block_shape = arbiter.shapes[1]
         
-        # Find the corresponding block
-        for block in blocks:
-            if block.shape == target_shape and not block.destroyed:
-                if isinstance(block, AngryBirdBlock):
-                    block.destroyed = True
-                    # Create explosion at the collision point
-                    x = block.body.position.x
-                    y = block.body.position.y
-                    explosions.append(Explosion(x, y))
-                    # Remove the bird from physics space
-                    space.remove(target_shape, target_shape.body)
-                    # Add score for destroying a bird
-                    menu.score += 1000
-                elif isinstance(block, WoodenBlock):
-                    # Only destroy wooden block if pig is moving fast enough
-                    pig_velocity = math.sqrt(pig_shape.body.velocity.x**2 + pig_shape.body.velocity.y**2)
-                    if pig_velocity > 500:  # Threshold for damage
-                        if block.damage() and block.destroyed:
-                            space.remove(target_shape, target_shape.body)
-                break
+        # Get collision velocity
+        points = arbiter.contact_point_set.points
+        if len(points) > 0:
+            point = points[0]
+            pig_vel = pig_shape.body.velocity
+            rel_velocity = (pig_vel.x**2 + pig_vel.y**2)**0.5
             
+            # Play collision sound
+            if COLLISION_SOUND:
+                COLLISION_SOUND.play()
+            
+            # Process wooden blocks
+            if block_shape.collision_type == COLLISION_TYPES["WOOD"] and rel_velocity > 200:
+                for block in blocks:
+                    if block.shape == block_shape:
+                        # Damage the block
+                        block.damage()
+                        
+                        # Play wood break sound
+                        if WOOD_BREAK_SOUND:
+                            WOOD_BREAK_SOUND.play()
+                        
+                        # Add score
+                        menu.score += 100
+                        
+                        # Create explosion effect
+                        pos = block.body.position
+                        explosions.append(Explosion(pos.x, pos.y))
+                        
+                        # If block is destroyed, remove it from space
+                        if block.destroyed:
+                            try:
+                                space.remove(block.body, block.shape)
+                            except:
+                                pass
+                        break
+            
+            # Process bird blocks
+            elif block_shape.collision_type == COLLISION_TYPES["BIRD"] and rel_velocity > 150:
+                for block in blocks:
+                    if block.shape == block_shape:
+                        # Damage the bird block (should destroy it in one hit)
+                        block.damage()
+                        
+                        # Play collision sound again for emphasis
+                        if COLLISION_SOUND:
+                            COLLISION_SOUND.play()
+                        
+                        # Add score - birds are worth more points
+                        menu.score += 200
+                        
+                        # Create explosion effect
+                        pos = block.body.position
+                        explosions.append(Explosion(pos.x, pos.y))
+                        
+                        # If bird is destroyed, remove it from space
+                        if block.destroyed:
+                            try:
+                                space.remove(block.body, block.shape)
+                            except:
+                                pass
+                        break
+        
         return True
 
     # Add collision handlers
@@ -230,7 +328,6 @@ def run_game():
     menu = Menu()
 
     # Game loop variables
-    clock = pygame.time.Clock()
     running = True
     dragging = False
     mouse_pressed = False
@@ -265,34 +362,38 @@ def run_game():
                         dragging = False
                         mouse_pressed = False
                 elif event.type == MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()
-                    if not pig.launched and math.dist(mouse_pos, (pig.body.position.x, pig.body.position.y)) < pig.radius:
-                        dragging = True
-                        mouse_pressed = True
-                elif event.type == MOUSEBUTTONUP:
-                    if dragging:
-                        mouse_pressed = False
-                        dragging = False
-                        # Calculate launch velocity
+                    mouse_pressed = True
+                    if not pig.launched:
                         mouse_pos = pygame.mouse.get_pos()
-                        dx = SLINGSHOT_POS[0] - mouse_pos[0]
-                        dy = SLINGSHOT_POS[1] - mouse_pos[1]
-                        
-                        # Calculate impulse with a maximum cap to prevent extreme velocities
-                        impulse_factor = 40  # Significantly increased impulse factor (was 30)
-                        impulse_x = dx * impulse_factor
-                        impulse_y = dy * impulse_factor
-                        
-                        # Cap the impulse magnitude to prevent extreme velocities
-                        impulse_magnitude = math.sqrt(impulse_x**2 + impulse_y**2)
-                        max_impulse = MAX_VELOCITY * 0.95  # Increased from 0.9 to 0.95 of MAX_VELOCITY
-                        
-                        if impulse_magnitude > max_impulse:
-                            scale_factor = max_impulse / impulse_magnitude
-                            impulse_x *= scale_factor
-                            impulse_y *= scale_factor
+                        if ((mouse_pos[0] - SLINGSHOT_POS[0])**2 + 
+                            (mouse_pos[1] - SLINGSHOT_POS[1])**2) < 1000:  # Within range of slingshot
+                            dragging = True
+                            # Play slingshot stretch sound
+                            if SLINGSHOT_STRETCH_SOUND:
+                                SLINGSHOT_STRETCH_SOUND.play()
+                elif event.type == MOUSEBUTTONUP:
+                    mouse_pressed = False
+                    if menu.state == "game" and dragging:
+                        dragging = False
+                        if not pig.launched:
+                            mouse_pos = pygame.mouse.get_pos()
+                            dx = SLINGSHOT_POS[0] - mouse_pos[0]
+                            dy = SLINGSHOT_POS[1] - mouse_pos[1]
                             
-                        pig.launch((impulse_x, impulse_y))
+                            # Limit stretch distance
+                            stretch = math.sqrt(dx**2 + dy**2)
+                            if stretch > MAX_STRETCH:
+                                scale = MAX_STRETCH / stretch
+                                dx *= scale
+                                dy *= scale
+                            
+                            # Launch the pig
+                            impulse = (dx * 35, dy * 35)
+                            pig.launch(impulse)
+                            
+                            # Play launch sound
+                            if LAUNCH_SOUND:
+                                LAUNCH_SOUND.play()
 
         # Clear screen and draw background
         screen.blit(background, (0, 0))
@@ -309,6 +410,9 @@ def run_game():
             # Initialize victory effect if needed
             if menu.victory_effect is None:
                 menu.victory_effect = VictoryEffect(WIDTH, HEIGHT)
+                # Play victory sound
+                if VICTORY_SOUND:
+                    VICTORY_SOUND.play()
             
             # Update and draw victory effects
             menu.victory_effect.update()
@@ -450,8 +554,9 @@ def run_game():
         clock.tick(60)
 
     # Clean up and return to main launcher
+    pygame.mixer.stop()  # Stop all sounds
     pygame.quit()
-    return 0
+    return True  # Return True to continue to the main menu
 
 if __name__ == "__main__":
     run_game() 

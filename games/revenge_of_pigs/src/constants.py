@@ -18,9 +18,9 @@ SELECTED_BLUE = (65, 105, 225)  # Royal blue for selected items
 GRAVITY = (0, 900)
 
 # Slingshot properties
-SLINGSHOT_X = 100
+SLINGSHOT_X = 200
 SLINGSHOT_Y = HEIGHT - 150
-MAX_STRETCH = 120
+MAX_STRETCH = 200
 SLINGSHOT_POS = (SLINGSHOT_X, SLINGSHOT_Y)
 
 # Block properties

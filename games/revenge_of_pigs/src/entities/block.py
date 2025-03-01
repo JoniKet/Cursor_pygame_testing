@@ -16,6 +16,7 @@ class AngryBirdBlock:
         self.shape.collision_type = COLLISION_TYPES["BIRD"]
         self.destroyed = False
         self.image = image
+        self.health = 1  # Birds only need one hit to destroy
 
     def make_dynamic(self):
         # Store current position and angle
@@ -43,6 +44,13 @@ class AngryBirdBlock:
             rotated_bird = pygame.transform.rotate(self.image, -angle)
             new_rect = rotated_bird.get_rect(center=(x, y))
             screen.blit(rotated_bird, new_rect.topleft)
+            
+    def damage(self):
+        self.health -= 1
+        if self.health <= 0:
+            self.destroyed = True
+            return True
+        return False
 
 class WoodenBlock:
     def __init__(self, x, y, width, height, space):
