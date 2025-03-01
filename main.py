@@ -21,7 +21,7 @@ class GameLauncher:
         self.games = [
             {
                 "name": "Revenge of the Pigs",
-                "module": "games.revenge_of_pigs.revenge_of_pigs",
+                "module": "games.revenge_of_pigs.main",
                 "description": "Launch angry birds at pigs in this physics-based game!"
             }
             # Add more games here as they are created
