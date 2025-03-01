@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import random
 from importlib import import_module
 
 # Initialize Pygame
@@ -23,6 +24,11 @@ class GameLauncher:
                 "name": "Revenge of the Pigs",
                 "module": "games.revenge_of_pigs.main",
                 "description": "Launch angry birds at pigs in this physics-based game!"
+            },
+            {
+                "name": "Questioning Bird",
+                "module": "games.Questioning_bird.main",
+                "description": "A top-down game with an existential bird defending against approaching pigs"
             }
             # Add more games here as they are created
         ]
@@ -67,14 +73,17 @@ class GameLauncher:
                     return False
                 else:
                     # Launch selected game
-                    game_module = import_module(self.games[self.selected]["module"])
-                    # Clear the screen
-                    screen.fill(BLACK)
-                    pygame.display.flip()
-                    # Run the game
-                    game_module.run_game()
-                    # Reinitialize display after game ends
-                    pygame.display.set_mode((WIDTH, HEIGHT))
+                    try:
+                        game_module = import_module(self.games[self.selected]["module"])
+                        # Clear the screen
+                        screen.fill(BLACK)
+                        pygame.display.flip()
+                        # Run the game
+                        game_module.run_game()
+                        # Reinitialize display after game ends
+                        pygame.display.set_mode((WIDTH, HEIGHT))
+                    except Exception as e:
+                        print(f"Error launching game: {e}")
         return True
 
 def main():
