@@ -20,18 +20,24 @@ def run_game():
 
     # Load and scale background image
     try:
-        background = pygame.image.load(os.path.join(assets_dir, 'background.png'))
+        # Try to load the new AI-generated background first
+        background = pygame.image.load(os.path.join(assets_dir, 'background_enhanced_ai.png'))
         background = pygame.transform.scale(background, (WIDTH, HEIGHT))
     except:
-        # Fallback background with gradient sky and ground
-        background = pygame.Surface((WIDTH, HEIGHT))
-        for y in range(HEIGHT):
-            # Create gradient from light blue to darker blue
-            if y < HEIGHT - 50:  # Sky
-                color = (135 - y//10, 206 - y//10, 235 - y//10)
-            else:  # Ground
-                color = (34, 139, 34)  # Forest green
-            pygame.draw.line(background, color, (0, y), (WIDTH, y))
+        try:
+            # Fall back to original background if AI background fails
+            background = pygame.image.load(os.path.join(assets_dir, 'background.png'))
+            background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+        except:
+            # Final fallback to gradient background
+            background = pygame.Surface((WIDTH, HEIGHT))
+            for y in range(HEIGHT):
+                # Create gradient from light blue to darker blue
+                if y < HEIGHT - 50:  # Sky
+                    color = (135 - y//10, 206 - y//10, 235 - y//10)
+                else:  # Ground
+                    color = (34, 139, 34)  # Forest green
+                pygame.draw.line(background, color, (0, y), (WIDTH, y))
 
     # Load character images
     pig_image = pygame.image.load(os.path.join(assets_dir, 'pig.png'))
