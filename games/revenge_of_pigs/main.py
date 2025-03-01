@@ -16,6 +16,77 @@ from games.revenge_of_pigs.src.ui.level_editor import LevelEditor
 from games.revenge_of_pigs.src.effects.explosion import Explosion
 from games.revenge_of_pigs.src.effects.victory_effect import VictoryEffect
 
+# Define boundary constants
+BOUNDARY_MARGIN = 50  # Extra margin beyond screen edges
+LEFT_BOUNDARY = -BOUNDARY_MARGIN
+RIGHT_BOUNDARY = WIDTH + BOUNDARY_MARGIN
+TOP_BOUNDARY = -BOUNDARY_MARGIN
+BOTTOM_BOUNDARY = HEIGHT + BOUNDARY_MARGIN
+MAX_VELOCITY = 6000  # Drastically increased maximum velocity cap
+
+def enforce_boundaries(space, pig, blocks):
+    """
+    Check if any objects are outside the map boundaries and bring them back.
+    Also applies a small dampening force to objects that hit the boundaries.
+    Enhanced to handle extremely high velocities.
+    """
+    # Check pig boundaries
+    if pig.launched:
+        pos_x, pos_y = pig.body.position
+        velocity_x, velocity_y = pig.body.velocity
+        
+        # Cap velocity to prevent boundary escapes
+        velocity_magnitude = math.sqrt(velocity_x**2 + velocity_y**2)
+        if velocity_magnitude > MAX_VELOCITY:
+            scale_factor = MAX_VELOCITY / velocity_magnitude
+            velocity_x *= scale_factor
+            velocity_y *= scale_factor
+            pig.body.velocity = velocity_x, velocity_y
+        
+        # Apply boundary constraints with stronger bounce effect for high velocities
+        if pos_x < LEFT_BOUNDARY:
+            pig.body.position = LEFT_BOUNDARY, pos_y
+            pig.body.velocity = -velocity_x * 0.8, velocity_y  # Less dampening (was 0.7)
+        elif pos_x > RIGHT_BOUNDARY:
+            pig.body.position = RIGHT_BOUNDARY, pos_y
+            pig.body.velocity = -velocity_x * 0.8, velocity_y  # Less dampening (was 0.7)
+            
+        if pos_y < TOP_BOUNDARY:
+            pig.body.position = pos_x, TOP_BOUNDARY
+            pig.body.velocity = velocity_x, -velocity_y * 0.8  # Less dampening (was 0.7)
+        elif pos_y > BOTTOM_BOUNDARY:
+            pig.body.position = pos_x, BOTTOM_BOUNDARY
+            pig.body.velocity = velocity_x, -velocity_y * 0.8  # Less dampening (was 0.7)
+    
+    # Check block boundaries
+    for block in blocks:
+        if not block.destroyed:
+            pos_x, pos_y = block.body.position
+            velocity_x, velocity_y = block.body.velocity
+            
+            # Cap velocity to prevent boundary escapes
+            velocity_magnitude = math.sqrt(velocity_x**2 + velocity_y**2)
+            if velocity_magnitude > MAX_VELOCITY:
+                scale_factor = MAX_VELOCITY / velocity_magnitude
+                velocity_x *= scale_factor
+                velocity_y *= scale_factor
+                block.body.velocity = velocity_x, velocity_y
+            
+            # Apply boundary constraints with stronger bounce effect for high velocities
+            if pos_x < LEFT_BOUNDARY:
+                block.body.position = LEFT_BOUNDARY, pos_y
+                block.body.velocity = -velocity_x * 0.8, velocity_y  # Less dampening (was 0.7)
+            elif pos_x > RIGHT_BOUNDARY:
+                block.body.position = RIGHT_BOUNDARY, pos_y
+                block.body.velocity = -velocity_x * 0.8, velocity_y  # Less dampening (was 0.7)
+                
+            if pos_y < TOP_BOUNDARY:
+                block.body.position = pos_x, TOP_BOUNDARY
+                block.body.velocity = velocity_x, -velocity_y * 0.8  # Less dampening (was 0.7)
+            elif pos_y > BOTTOM_BOUNDARY:
+                block.body.position = pos_x, BOTTOM_BOUNDARY
+                block.body.velocity = velocity_x, -velocity_y * 0.8  # Less dampening (was 0.7)
+
 def run_game():
     # Initialize Pygame and Pymunk
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -67,6 +138,21 @@ def run_game():
         ground.friction = 1.0
         ground.elasticity = 0.5
         space.add(ground)
+
+    # Create boundary walls
+    wall_thickness = 5
+    # Left wall
+    left_wall = pymunk.Segment(space.static_body, (0, 0), (0, HEIGHT), wall_thickness)
+    # Right wall
+    right_wall = pymunk.Segment(space.static_body, (WIDTH, 0), (WIDTH, HEIGHT), wall_thickness)
+    # Top wall
+    top_wall = pymunk.Segment(space.static_body, (0, 0), (WIDTH, 0), wall_thickness)
+    
+    # Set wall properties
+    for wall in [left_wall, right_wall, top_wall]:
+        wall.friction = 0.5
+        wall.elasticity = 0.7
+        space.add(wall)
 
     # Create angry bird blocks and wooden blocks
     blocks = []
@@ -134,6 +220,11 @@ def run_game():
         pygame.draw.rect(screen, (0, 100, 0), (0, HEIGHT - 50, SLINGSHOT_X - GAP_WIDTH/2, 50))
         # Draw right ground segment
         pygame.draw.rect(screen, (0, 100, 0), (SLINGSHOT_X + GAP_WIDTH/2, HEIGHT - 50, WIDTH - (SLINGSHOT_X + GAP_WIDTH/2), 50))
+        
+        # Draw boundary walls
+        pygame.draw.line(screen, (100, 100, 100), (0, 0), (0, HEIGHT), wall_thickness)  # Left wall
+        pygame.draw.line(screen, (100, 100, 100), (WIDTH, 0), (WIDTH, HEIGHT), wall_thickness)  # Right wall
+        pygame.draw.line(screen, (100, 100, 100), (0, 0), (WIDTH, 0), wall_thickness)  # Top wall
 
     # Create menu
     menu = Menu()
@@ -186,8 +277,21 @@ def run_game():
                         mouse_pos = pygame.mouse.get_pos()
                         dx = SLINGSHOT_POS[0] - mouse_pos[0]
                         dy = SLINGSHOT_POS[1] - mouse_pos[1]
-                        impulse_x = dx * 25
-                        impulse_y = dy * 25
+                        
+                        # Calculate impulse with a maximum cap to prevent extreme velocities
+                        impulse_factor = 40  # Significantly increased impulse factor (was 30)
+                        impulse_x = dx * impulse_factor
+                        impulse_y = dy * impulse_factor
+                        
+                        # Cap the impulse magnitude to prevent extreme velocities
+                        impulse_magnitude = math.sqrt(impulse_x**2 + impulse_y**2)
+                        max_impulse = MAX_VELOCITY * 0.95  # Increased from 0.9 to 0.95 of MAX_VELOCITY
+                        
+                        if impulse_magnitude > max_impulse:
+                            scale_factor = max_impulse / impulse_magnitude
+                            impulse_x *= scale_factor
+                            impulse_y *= scale_factor
+                            
                         pig.launch((impulse_x, impulse_y))
 
         # Clear screen and draw background
@@ -243,6 +347,9 @@ def run_game():
                 try:
                     space.remove(ground_left)
                     space.remove(ground_right)
+                    space.remove(left_wall)
+                    space.remove(right_wall)
+                    space.remove(top_wall)
                 except:
                     pass
                     
@@ -256,6 +363,15 @@ def run_game():
                     ground.friction = 1.0
                     ground.elasticity = 0.5
                     space.add(ground)
+                
+                # Recreate boundary walls
+                left_wall = pymunk.Segment(space.static_body, (0, 0), (0, HEIGHT), wall_thickness)
+                right_wall = pymunk.Segment(space.static_body, (WIDTH, 0), (WIDTH, HEIGHT), wall_thickness)
+                top_wall = pymunk.Segment(space.static_body, (0, 0), (WIDTH, 0), wall_thickness)
+                for wall in [left_wall, right_wall, top_wall]:
+                    wall.friction = 0.5
+                    wall.elasticity = 0.7
+                    space.add(wall)
                 
                 # Add collision handlers
                 handler_bird = space.add_collision_handler(COLLISION_TYPES["PIG"], COLLISION_TYPES["BIRD"])
@@ -299,6 +415,9 @@ def run_game():
             # Update physics
             space.step(1/60.0)
             
+            # Enforce boundaries for all objects
+            enforce_boundaries(space, pig, blocks)
+            
             # Update explosions
             for explosion in explosions[:]:
                 explosion.update()
@@ -330,8 +449,9 @@ def run_game():
         pygame.display.flip()
         clock.tick(60)
 
+    # Clean up and return to main launcher
     pygame.quit()
-    sys.exit()
+    return 0
 
 if __name__ == "__main__":
     run_game() 

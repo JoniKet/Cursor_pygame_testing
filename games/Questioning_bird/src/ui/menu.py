@@ -110,9 +110,12 @@ class Menu:
         self.next_state = STATE_CREDITS
         
     def quit_game(self):
-        """Quit the game"""
-        pygame.quit()
-        sys.exit()
+        """Return to the main launcher"""
+        # Instead of quitting the application, we'll just return from the game
+        # This will allow the main launcher to regain control
+        self.next_state = None  # Clear any pending state transition
+        pygame.event.post(pygame.event.Event(pygame.QUIT))  # Post a QUIT event to be handled by the game controller
+        return True  # Signal that we want to exit
         
     def handle_input(self, event):
         """Handle user input on the menu screen"""
@@ -127,8 +130,10 @@ class Menu:
                         return False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                pygame.quit()
-                sys.exit()
+                # Use the same approach as quit_game
+                self.next_state = None  # Clear any pending state transition
+                pygame.event.post(pygame.event.Event(pygame.QUIT))  # Post a QUIT event
+                return True  # Signal that we want to exit
                 
         return False
         
@@ -146,12 +151,15 @@ class Menu:
                 # Check if any button was clicked
                 for button in self.buttons:
                     if button['rect'].collidepoint(event.pos):
-                        button['action']()
+                        result = button['action']()
+                        # If the quit button was clicked (returns True), post a QUIT event
+                        if result is True:
+                            return None  # Return None to indicate no state change
                         return self.next_state
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.quit_game()
-                    return self.next_state
+                    return None
         
         return None
         

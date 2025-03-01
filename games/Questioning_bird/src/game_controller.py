@@ -80,6 +80,8 @@ class GameController:
                 if hasattr(state_obj, 'handle_input'):
                     exit_requested = state_obj.handle_input(event)
                     if exit_requested:
+                        # Instead of exiting the application, we'll just return from the game
+                        # This will allow the main launcher to regain control
                         self.running = False
             
             # Update current state
@@ -126,6 +128,7 @@ class GameController:
             # Update display
             pygame.display.flip()
             
-        # Clean up
+        # Clean up but don't exit the application
         pygame.quit()
-        sys.exit() 
+        # Return instead of sys.exit() to go back to the main launcher
+        return 0 

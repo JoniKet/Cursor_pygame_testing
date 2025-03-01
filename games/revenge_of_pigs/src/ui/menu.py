@@ -106,6 +106,7 @@ class Menu:
                     elif self.options[self.selected] == "Credits":
                         self.state = "credits"
                     elif self.options[self.selected] == "Quit":
+                        # Return False to signal returning to the main launcher
                         return False
         elif self.state == "credits" or self.state == "victory":
             if event.type == KEYDOWN and event.key == K_ESCAPE:
