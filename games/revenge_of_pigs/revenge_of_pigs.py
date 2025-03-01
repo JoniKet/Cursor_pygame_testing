@@ -79,6 +79,78 @@ def run_game():
         def draw(self, screen):
             pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.size)
 
+    class VictorySparkle:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(1, 3)
+            self.dx = math.cos(angle) * speed
+            self.dy = math.sin(angle) * speed
+            self.lifetime = random.randint(30, 60)
+            self.color = random.choice([(255, 215, 0), (255, 255, 0), (255, 255, 255)])  # Gold, Yellow, White
+            self.size = random.randint(2, 4)
+            
+        def update(self):
+            self.x += self.dx
+            self.y += self.dy
+            self.dy += 0.1  # Gentle gravity
+            self.lifetime -= 1
+            
+        def draw(self, screen):
+            if self.lifetime > 0:
+                alpha = min(255, self.lifetime * 8)
+                pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.size)
+
+    class VictoryEffect:
+        def __init__(self, width, height):
+            self.width = width
+            self.height = height
+            self.sparkles = []
+            self.time = 0
+            self.font = pygame.font.Font(None, 120)
+            self.small_font = pygame.font.Font(None, 48)
+            
+        def update(self):
+            self.time += 1
+            
+            # Add new sparkles
+            if self.time % 2 == 0:  # Add sparkles every other frame
+                for _ in range(3):  # Add 3 sparkles at a time
+                    x = random.randint(0, self.width)
+                    y = random.randint(0, self.height)
+                    self.sparkles.append(VictorySparkle(x, y))
+            
+            # Update existing sparkles
+            for sparkle in self.sparkles[:]:
+                sparkle.update()
+                if sparkle.lifetime <= 0:
+                    self.sparkles.remove(sparkle)
+                
+        def draw(self, screen):
+            # Draw all sparkles
+            for sparkle in self.sparkles:
+                sparkle.draw(screen)
+            
+            # Draw shining victory text with pulsing effect
+            scale = 1.0 + 0.1 * math.sin(self.time * 0.1)  # Pulsing scale
+            
+            # Main victory text
+            text = self.font.render("YOU'RE A WINNER!", True, (255, 215, 0))  # Gold color
+            text = pygame.transform.rotozoom(text, 0, scale)
+            rect = text.get_rect(center=(self.width//2, self.height//2))
+            screen.blit(text, rect)
+            
+            # Score text
+            score_text = self.small_font.render(f"Final Score: {menu.score}", True, WHITE)
+            score_rect = score_text.get_rect(center=(self.width//2, self.height//2 + 80))
+            screen.blit(score_text, score_rect)
+            
+            # Press ESC text
+            esc_text = self.small_font.render("Press ESC to return to menu", True, WHITE)
+            esc_rect = esc_text.get_rect(center=(self.width//2, self.height//2 + 140))
+            screen.blit(esc_text, esc_rect)
+
     class Explosion:
         def __init__(self, x, y):
             self.particles = [Particle(x, y) for _ in range(30)]
@@ -162,13 +234,31 @@ def run_game():
             self.mass = 1
             self.width = width
             self.height = height
-            self.body = pymunk.Body(self.mass, pymunk.moment_for_box(self.mass, (width, height)))
+            self.body = pymunk.Body(self.mass, pymunk.moment_for_box(self.mass, (width, height)), body_type=pymunk.Body.KINEMATIC)
             self.body.position = x, y
             self.shape = pymunk.Poly.create_box(self.body, (width, height))
             self.shape.elasticity = 0.4
             self.shape.friction = 0.8
             self.shape.collision_type = 2
             self.destroyed = False
+
+        def make_dynamic(self):
+            # Store current position and angle
+            pos = self.body.position
+            angle = self.body.angle
+            
+            # Create new dynamic body with proper moment
+            moment = pymunk.moment_for_box(self.mass, (self.width, self.height))
+            self.body = pymunk.Body(self.mass, moment, body_type=pymunk.Body.DYNAMIC)
+            self.body.position = pos
+            self.body.angle = angle
+            
+            # Create new shape with proper properties
+            self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
+            self.shape.elasticity = 0.4
+            self.shape.friction = 0.8
+            self.shape.collision_type = 2
+            self.shape.mass = self.mass
 
         def draw(self, screen):
             if not self.destroyed:
@@ -185,7 +275,7 @@ def run_game():
             self.mass = 2  # Heavier than birds
             self.width = width
             self.height = height
-            self.body = pymunk.Body(self.mass, pymunk.moment_for_box(self.mass, (width, height)))
+            self.body = pymunk.Body(self.mass, pymunk.moment_for_box(self.mass, (width, height)), body_type=pymunk.Body.KINEMATIC)
             self.body.position = x, y
             self.shape = pymunk.Poly.create_box(self.body, (width, height))
             self.shape.elasticity = 0.2  # Less bouncy than birds
@@ -194,6 +284,24 @@ def run_game():
             self.color = (139, 69, 19)   # Brown color for wood
             self.destroyed = False
             self.health = 3  # Takes 3 hits to destroy
+
+        def make_dynamic(self):
+            # Store current position and angle
+            pos = self.body.position
+            angle = self.body.angle
+            
+            # Create new dynamic body with proper moment
+            moment = pymunk.moment_for_box(self.mass, (self.width, self.height))
+            self.body = pymunk.Body(self.mass, moment, body_type=pymunk.Body.DYNAMIC)
+            self.body.position = pos
+            self.body.angle = angle
+            
+            # Create new shape with proper properties
+            self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
+            self.shape.elasticity = 0.2
+            self.shape.friction = 1.0
+            self.shape.collision_type = 3
+            self.shape.mass = self.mass
 
         def draw(self, screen):
             if not self.destroyed:
@@ -300,7 +408,9 @@ def run_game():
             self.selected = 0
             self.font = pygame.font.Font(None, 74)
             self.small_font = pygame.font.Font(None, 36)
-            self.state = "menu"  # menu, game, editor, credits
+            self.state = "menu"  # menu, game, editor, credits, victory
+            self.score = 0  # Initialize score
+            self.victory_effect = None
             
         def draw(self, screen):
             if self.state == "menu":
@@ -337,6 +447,19 @@ def run_game():
                     rect = text.get_rect(center=(WIDTH//2, HEIGHT//4 + i * 50))
                     screen.blit(text, rect)
         
+        def check_victory(self, blocks):
+            # Check if all birds are destroyed
+            birds_remaining = False
+            for block in blocks:
+                if isinstance(block, AngryBirdBlock) and not block.destroyed:
+                    birds_remaining = True
+                    break
+            
+            if not birds_remaining:
+                self.state = "victory"
+                if self.victory_effect is None:
+                    self.victory_effect = VictoryEffect(WIDTH, HEIGHT)
+
         def handle_input(self, event):
             if self.state == "menu":
                 if event.type == KEYDOWN:
@@ -347,15 +470,17 @@ def run_game():
                     elif event.key == K_RETURN:
                         if self.options[self.selected] == "Play":
                             self.state = "game"
+                            self.victory_effect = None  # Reset victory effect
                         elif self.options[self.selected] == "Level Editor":
                             self.state = "editor"
                         elif self.options[self.selected] == "Credits":
                             self.state = "credits"
                         elif self.options[self.selected] == "Quit":
                             return False
-            elif self.state == "credits":
+            elif self.state == "credits" or self.state == "victory":
                 if event.type == KEYDOWN and event.key == K_ESCAPE:
                     self.state = "menu"
+                    self.victory_effect = None  # Clear victory effect
             
             return True
 
@@ -378,6 +503,15 @@ def run_game():
                 {"text": "Play", "rect": pygame.Rect(560, 10, 100, 40), "type": "play"}
             ]
             
+        def get_blocks(self):
+            # Return a copy of the blocks list
+            return list(self.blocks)
+
+        def clear_blocks(self):
+            for block in self.blocks:
+                self.space.remove(block.body, block.shape)
+            self.blocks.clear()
+        
         def draw_toolbar(self):
             # Draw toolbar background
             pygame.draw.rect(self.screen, (50, 50, 50), (0, 0, WIDTH, self.toolbar_height))
@@ -442,11 +576,6 @@ def run_game():
                     abs(block.body.position.y - y) < self.grid_size/2):
                     self.space.remove(block.body, block.shape)
                     self.blocks.remove(block)
-        
-        def clear_blocks(self):
-            for block in self.blocks:
-                self.space.remove(block.body, block.shape)
-            self.blocks.clear()
         
         def save_level(self):
             level_data = []
@@ -537,8 +666,11 @@ def run_game():
     blocks.append(WoodenBlock(STACK_START_X, STACK_START_Y - 2 * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
     blocks.append(AngryBirdBlock(STACK_START_X + BLOCK_SIZE, STACK_START_Y - 2 * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
 
-    # Add all blocks to the physics space
+    # Add all blocks to the physics space (initially as kinematic)
     for block in blocks:
+        # Initialize block in space
+        block.body.position = (block.body.position.x, block.body.position.y)  # Ensure position is set
+        block.body.angle = 0  # Start with no rotation
         space.add(block.body, block.shape)
 
     # Slingshot properties
@@ -575,6 +707,8 @@ def run_game():
                     explosions.append(Explosion(x, y))
                     # Remove the bird from physics space
                     space.remove(target_shape, target_shape.body)
+                    # Add score for destroying a bird
+                    menu.score += 1000
                 elif isinstance(block, WoodenBlock):
                     # Only destroy wooden block if pig is moving fast enough
                     pig_velocity = math.sqrt(pig_shape.body.velocity.x**2 + pig_shape.body.velocity.y**2)
@@ -616,7 +750,79 @@ def run_game():
                     running = menu.handle_input(event)
             menu.draw(screen)
             
+        elif menu.state == "victory":
+            # Handle victory state
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                else:
+                    running = menu.handle_input(event)
+            
+            # Initialize victory effect if needed
+            if menu.victory_effect is None:
+                menu.victory_effect = VictoryEffect(WIDTH, HEIGHT)
+            
+            # Update and draw victory effects
+            menu.victory_effect.update()
+            menu.victory_effect.draw(screen)
+            
         elif menu.state == "game":
+            # If first time entering game state or coming from editor, initialize physics
+            if not hasattr(menu, 'game_initialized') or (hasattr(menu, 'editor') and menu.editor is not None):
+                # Reset score when starting new game
+                menu.score = 0
+                # Store blocks (either from editor or default level)
+                if hasattr(menu, 'editor') and menu.editor is not None:
+                    current_blocks = menu.editor.get_blocks()
+                    menu.editor.clear_blocks()
+                    menu.editor = None
+                else:
+                    current_blocks = blocks.copy()
+                    
+                # Reset physics space
+                for block in blocks:
+                    try:
+                        space.remove(block.body, block.shape)
+                    except:
+                        pass
+                blocks.clear()
+                
+                # Reset space
+                space.remove(ground_left)
+                space.remove(ground_right)
+                space = pymunk.Space()
+                space.gravity = (0, 900)
+                
+                # Recreate ground segments
+                ground_left = pymunk.Segment(space.static_body, (0, HEIGHT - 50), (SLINGSHOT_X - GAP_WIDTH/2, HEIGHT - 50), 5)
+                ground_right = pymunk.Segment(space.static_body, (SLINGSHOT_X + GAP_WIDTH/2, HEIGHT - 50), (WIDTH, HEIGHT - 50), 5)
+                for ground in [ground_left, ground_right]:
+                    ground.friction = 1.0
+                    ground.elasticity = 0.5
+                    space.add(ground)
+                
+                # Add collision handler
+                space.add_collision_handler(COLLISION_TYPES["PIG"], COLLISION_TYPES["BIRD"]).begin = collision_handler
+                
+                # Make all blocks dynamic and add to physics space
+                for block in current_blocks:
+                    # Make dynamic and add to space
+                    block.make_dynamic()
+                    space.add(block.body, block.shape)
+                
+                # Update the global blocks list
+                blocks = current_blocks
+                
+                # Reset pig
+                try:
+                    space.remove(pig.body, pig.shape)
+                except:
+                    pass
+                pig = Pig(SLINGSHOT_X, SLINGSHOT_Y - 20)
+                
+                # Mark game as initialized
+                menu.game_initialized = True
+            
             # Handle game events
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -667,6 +873,9 @@ def run_game():
                 if not explosion.is_alive:
                     explosions.remove(explosion)
             
+            # Check for victory condition
+            menu.check_victory(blocks)
+            
             # Draw game elements
             if dragging and not pig.launched:
                 slingshot.draw(screen, (pig.body.position.x, pig.body.position.y))
@@ -682,9 +891,13 @@ def run_game():
             for explosion in explosions:
                 explosion.draw(screen)
                 
+            # Draw score
+            score_text = menu.small_font.render(f"Score: {menu.score}", True, WHITE)
+            screen.blit(score_text, (10, 10))
+            
         elif menu.state == "editor":
             # Initialize editor if not already done
-            if not hasattr(menu, 'editor'):
+            if not hasattr(menu, 'editor') or menu.editor is None:
                 menu.editor = LevelEditor(screen, space, assets_dir)
             
             # Handle editor events
