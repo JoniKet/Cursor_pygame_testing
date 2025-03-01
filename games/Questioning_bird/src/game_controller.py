@@ -107,6 +107,9 @@ class GameController:
                 # If it's a game over, update the score
                 if next_state == STATE_GAME_OVER and self.current_state == STATE_PLAYING:
                     self.states[STATE_GAME_OVER].set_score(state_obj.score)
+                    # Pass victory state if available
+                    if hasattr(state_obj, 'victory'):
+                        self.states[STATE_GAME_OVER].set_victory(state_obj.victory)
                     
                 # Update current state
                 self.current_state = next_state

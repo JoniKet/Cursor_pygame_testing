@@ -29,7 +29,7 @@ class Assets:
             
         # Define default colors for fallback assets
         self.default_colors = {
-            'bird': (255, 255, 0),       # Yellow
+            'bird': (216, 49, 49),       # Red (Angry Birds red)
             'pig': (50, 205, 50),        # Green
             'bullet': (255, 0, 0),       # Red
             'explosion': (255, 165, 0),  # Orange
@@ -68,14 +68,22 @@ class Assets:
         color = self.default_colors.get(name, (255, 255, 255))
         
         if name == 'bird':
-            # Create a yellow circle for the bird
+            # Create a red Angry Birds style bird
             image = pygame.Surface((50, 50), pygame.SRCALPHA)
-            pygame.draw.circle(image, color, (25, 25), 20)
-            # Add eyes
-            pygame.draw.circle(image, (0, 0, 0), (35, 15), 5)
-            pygame.draw.circle(image, (255, 255, 255), (33, 13), 2)
-            # Add beak
-            pygame.draw.polygon(image, (255, 165, 0), [(45, 25), (55, 20), (55, 30)])
+            # Main body - red circle
+            pygame.draw.circle(image, (216, 49, 49), (25, 25), 20)  # Red color
+            # Red bird's distinctive eyebrows - thick black lines
+            pygame.draw.line(image, (0, 0, 0), (15, 12), (25, 8), 3)  # Left eyebrow
+            pygame.draw.line(image, (0, 0, 0), (25, 8), (35, 12), 3)  # Right eyebrow
+            # Eyes - white with black pupils
+            pygame.draw.circle(image, (255, 255, 255), (18, 18), 5)  # Left eye white
+            pygame.draw.circle(image, (255, 255, 255), (32, 18), 5)  # Right eye white
+            pygame.draw.circle(image, (0, 0, 0), (18, 18), 2)  # Left pupil
+            pygame.draw.circle(image, (0, 0, 0), (32, 18), 2)  # Right pupil
+            # Beak - orange triangle
+            pygame.draw.polygon(image, (255, 165, 0), [(25, 22), (35, 28), (25, 34)])
+            # Tail feathers - small red triangles at the back
+            pygame.draw.polygon(image, (180, 40, 40), [(5, 20), (10, 25), (5, 30)])
             
         elif name == 'pig':
             # Create a green circle for the pig
@@ -117,8 +125,15 @@ class Assets:
             'shoot': 'shoot.wav',
             'explosion': 'explosion.wav',
             'game_over': 'game_over.wav',
-            'menu_select': 'menu_select.wav'
+            'menu_select': 'menu_select.wav',
+            'angry': 'angry.wav',
+            'question': 'question.wav',
+            'special_attack': 'angry.wav'  # Reuse angry sound for special attack
         }
+        
+        # Initialize pygame mixer if not already initialized
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
         
         for name, filename in sound_files.items():
             file_path = os.path.join(ASSET_PATH, filename)
@@ -126,10 +141,12 @@ class Assets:
                 try:
                     sound = pygame.mixer.Sound(file_path)
                     self.sounds[name] = sound
-                except pygame.error:
+                except pygame.error as e:
+                    print(f"Error loading sound {name}: {e}")
                     # Create empty sound for missing files
                     self.sounds[name] = None
             else:
+                print(f"Sound file not found: {file_path}")
                 # Create empty sound for missing files
                 self.sounds[name] = None
                 
@@ -141,8 +158,12 @@ class Assets:
         """Get a sound by name"""
         return self.sounds.get(name)
     
-    def play_sound(self, name):
-        """Play a sound by name"""
+    def play_sound(self, name, volume=1.0):
+        """Play a sound by name with optional volume control"""
         sound = self.get_sound(name)
         if sound:
-            sound.play() 
+            # Set volume (0.0 to 1.0)
+            sound.set_volume(volume)
+            sound.play()
+        else:
+            print(f"Sound '{name}' not found or not loaded properly") 

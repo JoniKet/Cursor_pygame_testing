@@ -1,4 +1,5 @@
 import pygame
+import random
 import os
 import sys
 
@@ -29,6 +30,7 @@ class GameOver:
         self.assets = assets
         self.score = 0
         self.next_state = None
+        self.victory = False  # Default to defeat
         
         # Create fonts
         self.title_font = pygame.font.Font(None, FONT_SIZE_LARGE)
@@ -72,7 +74,6 @@ class GameOver:
             "What will you think about when this game is forgotten?",
             "Is it the journey or the score that matters?"
         ]
-        import random
         self.question = random.choice(self.questions)
         self.question_timer = 0
         self.question_change_delay = 240  # Change question every 4 seconds
@@ -80,6 +81,10 @@ class GameOver:
     def set_score(self, score):
         """Set the final score to display"""
         self.score = score
+        
+    def set_victory(self, victory):
+        """Set whether the player won or lost"""
+        self.victory = victory
         
     def play_again(self):
         """Return to the game state"""
@@ -126,9 +131,15 @@ class GameOver:
         overlay.set_alpha(240)  # Semi-transparent
         screen.blit(overlay, (0, 0))
         
-        # Draw game over title
-        title_text = "GAME OVER"
-        title_surface = self.title_font.render(title_text, True, (255, 50, 50))
+        # Draw game over title with different color based on victory/defeat
+        if self.victory:
+            title_text = "VICTORY!"
+            title_color = (50, 255, 50)  # Green for victory
+        else:
+            title_text = "GAME OVER"
+            title_color = (255, 50, 50)  # Red for defeat
+            
+        title_surface = self.title_font.render(title_text, True, title_color)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 100))
         screen.blit(title_surface, title_rect)
         
@@ -138,9 +149,19 @@ class GameOver:
         score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2, 170))
         screen.blit(score_surface, score_rect)
         
+        # Draw outcome message
+        if self.victory:
+            outcome_text = "A pig has reached you! Your existential crisis is resolved."
+        else:
+            outcome_text = "You shot too many pigs. Your guilt is overwhelming."
+            
+        outcome_surface = self.option_font.render(outcome_text, True, (200, 200, 255))
+        outcome_rect = outcome_surface.get_rect(center=(SCREEN_WIDTH // 2, 210))
+        screen.blit(outcome_surface, outcome_rect)
+        
         # Draw existential question
         question_surface = self.option_font.render(self.question, True, (200, 200, 100))
-        question_rect = question_surface.get_rect(center=(SCREEN_WIDTH // 2, 240))
+        question_rect = question_surface.get_rect(center=(SCREEN_WIDTH // 2, 250))
         screen.blit(question_surface, question_rect)
         
         # Draw buttons
