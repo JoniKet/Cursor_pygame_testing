@@ -1073,7 +1073,9 @@ class Game:
             # Draw control mode indicator
             control_text = "Control: Mouse (Press C to toggle)" if self.use_mouse_control else "Control: Keyboard (Press C to toggle)"
             control_surface = self.font.render(control_text, True, WHITE)
-            screen.blit(control_surface, (10, 10))
+            # Update position to bottom right
+            control_rect = control_surface.get_rect(bottomright=(SCREEN_WIDTH - 10, SCREEN_HEIGHT - 10))
+            screen.blit(control_surface, control_rect)
             
             # Draw missile control instructions
             if self.has_missiles:
@@ -1082,7 +1084,9 @@ class Game:
                 else:
                     missile_text = f"Missiles: {self.max_missiles - self.missile_shots} (Press S to fire)"
                 missile_surface = self.font.render(missile_text, True, (255, 215, 0))  # Golden yellow
-                screen.blit(missile_surface, (10, 50))
+                # Update position to bottom right
+                missile_rect = missile_surface.get_rect(bottomright=(SCREEN_WIDTH - 10, SCREEN_HEIGHT - 50))
+                screen.blit(missile_surface, missile_rect)
             
             # Draw health pack if active
             if self.health_pack:

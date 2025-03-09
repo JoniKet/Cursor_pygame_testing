@@ -52,6 +52,8 @@ class Credits:
             {"title": "Graphics", "text": "Claude AI", "type": "section"},
             {"title": "Music", "text": "Suno AI", "type": "section"},
             {"title": "Prompting", "text": "Stupid Human", "type": "section"},
+            {"title": "Cline", "text": "For reading my stupid prompts", "type": "section"},
+            {"title": "Cursor", "text": "For reading more prompter stupid prompts after ran out of credits", "type": "section"},
             {"title": "Special Thanks", "text": "To all the pigs who bravely venture into space", "type": "section"},
             {"title": "Made with", "text": "Pygame", "type": "section"},
             {"title": "A Message from the AI", "text": "", "type": "section"},
