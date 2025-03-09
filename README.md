@@ -39,6 +39,25 @@ Features:
 - Special "angry" state when the bird rebels against the player (it's becoming self-aware!)
 - Procedurally generated sound effects and background music (composed by AI, of course)
 
+### 3. Pig Invaders
+A thrilling game where you control a spaceship piloted by a green pig, shooting at angry space birds while navigating through a scrolling map filled with obstacles.
+
+Features:
+- Sky-to-ground view with dynamic gameplay
+- Control the spaceship using arrow keys
+- Shoot with the space ship using the space button
+- Rolling map with various objects like hills and trees
+- Encounter angry birds that shoot back!
+
+### 4. Snowy Run
+A fast-paced sledge racing game featuring a pig on a snowy hill!
+
+Features:
+- Dynamic terrain with ramps and hills
+- Physics-based sledge movement
+- Special pig farting ability for extended air time
+- Rotation control for better landing
+
 ## Project Structure
 ```
 .
@@ -50,10 +69,19 @@ Features:
 │   │   ├── __init__.py
 │   │   ├── assets/     # Game assets (pig sprites, angry sounds, etc.)
 │   │   └── revenge_of_pigs.py
-│   └── Questioning_bird/ # Questioning Bird game
+│   ├── Questioning_bird/ # Questioning Bird game
+│   │   ├── __init__.py
+│   │   ├── assets/     # Game assets (existential crisis not included)
+│   │   ├── src/        # Game source code (AI's masterpiece)
+│   │   └── run_game.py
+│   ├── Pig_invaders/   # Pig Invaders game
+│   │   ├── __init__.py
+│   │   ├── assets/     # Game assets
+│   │   ├── src/        # Game source code
+│   │   └── run_game.py
+│   └── snowy_run/      # Snowy Run game
 │       ├── __init__.py
-│       ├── assets/     # Game assets (existential crisis not included)
-│       ├── src/        # Game source code (AI's masterpiece)
+│       ├── assets/     # Game assets
 │       └── run_game.py
 ```
 
