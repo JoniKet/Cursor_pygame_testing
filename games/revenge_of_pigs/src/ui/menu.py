@@ -19,15 +19,16 @@ class Menu:
         if self.state == "menu":
             # Draw title
             title = self.font.render("Revenge of the Pigs!", True, WHITE)
-            title_rect = title.get_rect(center=(WIDTH//2, 100))  # Fixed position
+            title_rect = title.get_rect(center=(WIDTH//2, HEIGHT//8))  # Moved title higher
             screen.blit(title, title_rect)
             
-            # Draw menu options with fixed positions
-            menu_start_y = 250  # Start menu items lower
+            # Draw menu options with adjusted positions - moved higher and closer together
+            menu_start_y = HEIGHT//4  # Start menu items at 1/4 of screen height
+            menu_spacing = 60  # Reduced spacing between items
             for i, option in enumerate(self.options):
                 color = SELECTED_BLUE if i == self.selected else MENU_BLUE
                 text = self.font.render(option, True, color)
-                rect = text.get_rect(center=(WIDTH//2, menu_start_y + i * 60))
+                rect = text.get_rect(center=(WIDTH//2, menu_start_y + i * menu_spacing))
                 screen.blit(text, rect)
             
             # Draw instructions with solid background
@@ -41,19 +42,20 @@ class Menu:
                 "6. Press 'R' to reset the pig to the slingshot"
             ]
             
-            # Draw solid background box for instructions
-            box_width = 600
-            box_height = 250  # Increased height for additional instruction
-            box_x = WIDTH//2 - box_width//2
-            box_y = 500  # Fixed position
+            # Draw solid background box for instructions - moved lower
+            box_width = WIDTH//2  # Half of screen width
+            box_height = 280  # Height for all instructions
+            box_x = WIDTH//4  # Start at 1/4 of screen width
+            box_y = HEIGHT - box_height - 10  # Moved slightly lower
             pygame.draw.rect(screen, (0, 0, 50), (box_x, box_y, box_width, box_height))  # Dark blue background
             pygame.draw.rect(screen, MENU_BLUE, (box_x, box_y, box_width, box_height), 2)  # Blue border
             
-            # Draw instructions text
+            # Draw instructions text with adjusted spacing
+            instruction_spacing = 35  # Spacing between instruction lines
             for i, line in enumerate(instructions):
                 color = SELECTED_BLUE if i == 0 else WHITE
                 text = self.instruction_font.render(line, True, color)
-                rect = text.get_rect(center=(WIDTH//2, box_y + 30 + i * 32))
+                rect = text.get_rect(center=(WIDTH//2, box_y + 30 + i * instruction_spacing))
                 screen.blit(text, rect)
                 
         elif self.state == "credits":

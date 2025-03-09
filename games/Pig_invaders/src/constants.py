@@ -1,8 +1,8 @@
 import pygame
 
 # Screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 
 # Game states
 STATE_MENU = 0

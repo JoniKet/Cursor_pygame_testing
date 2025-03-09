@@ -118,22 +118,6 @@ dmypy.json
 # PyCharm settings
 .idea/
 
-# Pygame specific
-*.wav
-*.mp3
-*.ogg
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.bmp
-*.tiff
-*.ico
-
-# Exceptions - uncomment if you want to include specific assets
-# !assets/required_image.png
-# !assets/required_sound.wav
-
 # Windows specific
 Thumbs.db
 ehthumbs.db

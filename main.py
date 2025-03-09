@@ -36,120 +36,119 @@ class GameLauncher:
                 "name": "Snowy Run",
                 "module": "games.snowy_run.main",
                 "description": "Control a pig on a sledge avoiding birds in this winter sledding game!"
+            },
+            {
+                "name": "Pig Invaders",
+                "module": "games.Pig_invaders.main",
+                "description": "Classic space invaders with a piggy twist - defend against waves of invading pigs!"
             }
             # Add more games here as they are created
         ]
         self.selected = 0
         
+        # Load and scale background image
+        try:
+            self.background = pygame.image.load("assets/background.png").convert_alpha()
+            self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
+        except Exception as e:
+            self.background = None
+            print(f"Warning: Could not load background image: {e}")
+        
         # Fix font initialization to handle potential errors
         try:
             # Try to use the default font
-            self.font = pygame.font.Font(None, 74)
-            self.selected_font = pygame.font.Font(None, 84)
-            self.description_font = pygame.font.Font(None, 36)
+            self.font = pygame.font.Font(None, 54)
+            self.selected_font = pygame.font.Font(None, 64)
+            self.description_font = pygame.font.Font(None, 28)
         except:
             # Fallback to SysFont if Font fails
-            self.font = pygame.font.SysFont('arial', 74)
-            self.selected_font = pygame.font.SysFont('arial', 84)
-            self.description_font = pygame.font.SysFont('arial', 36)
+            self.font = pygame.font.SysFont('arial', 54)
+            self.selected_font = pygame.font.SysFont('arial', 64)
+            self.description_font = pygame.font.SysFont('arial', 28)
         
         self.state = "menu"
-        self.selection_animation = 0  # Animation counter
         
     def draw(self, screen):
-        # Update animation counter
-        self.selection_animation = (self.selection_animation + 0.1) % (2 * 3.14159)
-        pulse_value = abs(math.sin(self.selection_animation))  # Pulsing effect
+        # Draw background
+        if self.background:
+            screen.blit(self.background, (0, 0))
+        else:
+            screen.fill(BLACK)
+            
+        # Add a semi-transparent overlay to ensure text remains readable
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(100)
+        screen.blit(overlay, (0, 0))
         
         # Draw title
         title = self.font.render("Pygame Games Collection", True, WHITE)
-        title_rect = title.get_rect(center=(WIDTH//2, HEIGHT//4))
+        title_rect = title.get_rect(center=(WIDTH//2, HEIGHT//5))
         screen.blit(title, title_rect)
         
-        # Draw game options
+        # Draw game options with increased spacing for descriptions
+        spacing = 100  # Increased from 80 to give more room for descriptions
+        start_y = HEIGHT//3
+        
         for i, game in enumerate(self.games):
-            option_y = HEIGHT//2 + i * 100
+            option_y = start_y + i * spacing
             
             if i == self.selected:
-                # Draw selection indicators (arrows on both sides)
-                left_arrow_x = WIDTH//2 - 250 - 10 * pulse_value
-                right_arrow_x = WIDTH//2 + 250 + 10 * pulse_value
+                # Draw simple selection marker (two lines on each side)
+                marker_width = 20
+                marker_gap = 5
+                left_x = WIDTH//2 - 200
+                right_x = WIDTH//2 + 200
                 
-                # Left arrow
-                pygame.draw.polygon(screen, HIGHLIGHT_COLOR, [
-                    (left_arrow_x, option_y),
-                    (left_arrow_x - 30, option_y - 20),
-                    (left_arrow_x - 30, option_y + 20)
-                ])
+                # Left markers
+                pygame.draw.line(screen, HIGHLIGHT_COLOR, (left_x, option_y - 10), (left_x + marker_width, option_y - 10), 2)
+                pygame.draw.line(screen, HIGHLIGHT_COLOR, (left_x, option_y + 10), (left_x + marker_width, option_y + 10), 2)
                 
-                # Right arrow (pointing left)
-                pygame.draw.polygon(screen, HIGHLIGHT_COLOR, [
-                    (right_arrow_x, option_y),
-                    (right_arrow_x + 30, option_y - 20),
-                    (right_arrow_x + 30, option_y + 20)
-                ])
+                # Right markers
+                pygame.draw.line(screen, HIGHLIGHT_COLOR, (right_x - marker_width, option_y - 10), (right_x, option_y - 10), 2)
+                pygame.draw.line(screen, HIGHLIGHT_COLOR, (right_x - marker_width, option_y + 10), (right_x, option_y + 10), 2)
                 
-                # Use bigger, brighter text for selected item
+                # Selected text
                 text = self.selected_font.render(game["name"], True, SELECTED_COLOR)
                 rect = text.get_rect(center=(WIDTH//2, option_y))
                 
-                # Draw highlight box with pulsing effect
-                highlight_rect = rect.inflate(60 + 20 * pulse_value, 30 + 10 * pulse_value)
-                pygame.draw.rect(screen, HIGHLIGHT_COLOR, highlight_rect, 4, border_radius=15)
+                # Simple highlight box with more vertical space
+                highlight_rect = rect.inflate(40, 16)  # Reduced vertical inflation
+                pygame.draw.rect(screen, HIGHLIGHT_COLOR, highlight_rect, 2, border_radius=10)
                 
-                # Add a subtle background fill to make it stand out more
-                inner_rect = rect.inflate(40, 20)
-                s = pygame.Surface((inner_rect.width, inner_rect.height))
-                s.set_alpha(50)  # Transparent
-                s.fill(HIGHLIGHT_COLOR)
-                screen.blit(s, inner_rect)
+                # Description - moved further down
+                desc = self.description_font.render(game["description"], True, WHITE)
+                desc_rect = desc.get_rect(center=(WIDTH//2, option_y + 40))  # Increased from 30 to 40
+                screen.blit(desc, desc_rect)
             else:
                 text = self.font.render(game["name"], True, MENU_BLUE)
                 rect = text.get_rect(center=(WIDTH//2, option_y))
             
             screen.blit(text, rect)
-            
-            # Draw description
-            if i == self.selected:
-                desc = self.description_font.render(game["description"], True, WHITE)
-                desc_rect = desc.get_rect(center=(WIDTH//2, option_y + 40))
-                screen.blit(desc, desc_rect)
         
         # Draw quit option
-        quit_y = HEIGHT//2 + len(self.games) * 100
+        quit_y = start_y + len(self.games) * spacing
         
         if self.selected == len(self.games):
-            # Draw selection indicators (arrows on both sides) for quit
-            left_arrow_x = WIDTH//2 - 100 - 10 * pulse_value
-            right_arrow_x = WIDTH//2 + 100 + 10 * pulse_value
+            # Draw simple selection marker for quit
+            marker_width = 20
+            left_x = WIDTH//2 - 80
+            right_x = WIDTH//2 + 80
             
-            # Left arrow
-            pygame.draw.polygon(screen, HIGHLIGHT_COLOR, [
-                (left_arrow_x, quit_y),
-                (left_arrow_x - 30, quit_y - 20),
-                (left_arrow_x - 30, quit_y + 20)
-            ])
+            # Left markers
+            pygame.draw.line(screen, HIGHLIGHT_COLOR, (left_x, quit_y - 10), (left_x + marker_width, quit_y - 10), 2)
+            pygame.draw.line(screen, HIGHLIGHT_COLOR, (left_x, quit_y + 10), (left_x + marker_width, quit_y + 10), 2)
             
-            # Right arrow (pointing left)
-            pygame.draw.polygon(screen, HIGHLIGHT_COLOR, [
-                (right_arrow_x, quit_y),
-                (right_arrow_x + 30, quit_y - 20),
-                (right_arrow_x + 30, quit_y + 20)
-            ])
+            # Right markers
+            pygame.draw.line(screen, HIGHLIGHT_COLOR, (right_x - marker_width, quit_y - 10), (right_x, quit_y - 10), 2)
+            pygame.draw.line(screen, HIGHLIGHT_COLOR, (right_x - marker_width, quit_y + 10), (right_x, quit_y + 10), 2)
             
             quit_text = self.selected_font.render("Quit", True, SELECTED_COLOR)
             quit_rect = quit_text.get_rect(center=(WIDTH//2, quit_y))
             
-            # Draw highlight box
-            highlight_rect = quit_rect.inflate(60 + 20 * pulse_value, 30 + 10 * pulse_value)
-            pygame.draw.rect(screen, HIGHLIGHT_COLOR, highlight_rect, 4, border_radius=15)
-            
-            # Add a subtle background fill
-            inner_rect = quit_rect.inflate(40, 20)
-            s = pygame.Surface((inner_rect.width, inner_rect.height))
-            s.set_alpha(50)  # Transparent
-            s.fill(HIGHLIGHT_COLOR)
-            screen.blit(s, inner_rect)
+            # Simple highlight box
+            highlight_rect = quit_rect.inflate(40, 20)
+            pygame.draw.rect(screen, HIGHLIGHT_COLOR, highlight_rect, 2, border_radius=10)
         else:
             quit_text = self.font.render("Quit", True, MENU_BLUE)
             quit_rect = quit_text.get_rect(center=(WIDTH//2, quit_y))
@@ -158,7 +157,7 @@ class GameLauncher:
         
         # Draw navigation instructions at the bottom
         nav_text = self.description_font.render("Use UP/DOWN arrows to navigate, ENTER to select", True, WHITE)
-        nav_rect = nav_text.get_rect(center=(WIDTH//2, HEIGHT - 50))
+        nav_rect = nav_text.get_rect(center=(WIDTH//2, HEIGHT - 30))
         screen.blit(nav_text, nav_rect)
     
     def handle_input(self, event):

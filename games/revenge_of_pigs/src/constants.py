@@ -1,8 +1,8 @@
 import pygame
 
 # Window dimensions
-WIDTH = 1200
-HEIGHT = 800
+WIDTH = 1280
+HEIGHT = 720
 
 # Colors
 BLACK = (0, 0, 0)

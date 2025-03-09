@@ -12,8 +12,8 @@ pygame.init()
 pygame.mixer.init()  # Initialize the sound mixer
 
 # Game constants
-SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 FPS = 60
 
 # Colors

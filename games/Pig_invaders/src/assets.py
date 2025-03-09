@@ -48,7 +48,7 @@ class Assets:
         """Load all game images or create default ones"""
         image_files = {
             'background': 'background.png',
-            'player': 'player.png',
+            'player': 'spaceship.png',
             'enemy': 'enemy.png',
             'bullet': 'bullet.png',
             'explosion': 'explosion.png',

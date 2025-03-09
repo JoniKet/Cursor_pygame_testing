@@ -50,6 +50,8 @@ class Credits:
             {"title": "Programming", "text": "Claude AI", "type": "section"},
             {"title": "Design", "text": "Claude AI", "type": "section"},
             {"title": "Graphics", "text": "Claude AI", "type": "section"},
+            {"title": "Music", "text": "Suno AI", "type": "section"},
+            {"title": "Prompting", "text": "Stupid Human", "type": "section"},
             {"title": "Special Thanks", "text": "To all the pigs who bravely venture into space", "type": "section"},
             {"title": "Made with", "text": "Pygame", "type": "section"},
             {"title": "A Message from the AI", "text": "", "type": "section"},
